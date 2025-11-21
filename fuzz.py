@@ -8,21 +8,19 @@ from boofuzz import (
     s_get,
     s_initialize,
     s_size,
+    s_static,
     s_string,
     s_word,
-    s_static,
 )
 
 # Configure target MQTT broker
-MQTT_HOST = "104.131.126.29"
+MQTT_HOST = "localhost"
 MQTT_PORT = 1883
 
 # Create session with logging and crash detection
 session = Session(
-    target=Target(
-        connection=SocketConnection(MQTT_HOST, MQTT_PORT, proto="tcp")
-    ),
-    sleep_time=0.5,
+    target=Target(connection=SocketConnection(MQTT_HOST, MQTT_PORT, proto="tcp")),
+    sleep_time=0.1,
     receive_data_after_fuzz=True,
     check_data_received_each_request=False,
 )
@@ -34,7 +32,9 @@ s_initialize("mqtt_connect")
 
 # Fixed Header
 s_byte(0x10, name="packet_type", fuzzable=False)  # CONNECT packet type
-s_size("connect_body", length=1, math=lambda x: x, name="remaining_length", fuzzable=True)
+s_size(
+    "connect_body", length=1, math=lambda x: x, name="remaining_length", fuzzable=True
+)
 
 if s_block_start("connect_body"):
     # Variable Header - Protocol Name
@@ -47,7 +47,7 @@ if s_block_start("connect_body"):
     s_word(60, name="keep_alive", endian=">", fuzzable=True)
 
     # Payload - Client ID
-    s_word(0x000d, name="client_id_len", endian=">", fuzzable=True)
+    s_word(0x000D, name="client_id_len", endian=">", fuzzable=True)
     s_string("fuzzed_client", name="client_id", fuzzable=True)
 
 s_block_end()
@@ -59,14 +59,16 @@ s_initialize("mqtt_subscribe")
 
 # Fixed Header
 s_byte(0x82, name="packet_type", fuzzable=False)  # SUBSCRIBE packet type with QoS 1
-s_size("subscribe_body", length=1, math=lambda x: x, name="remaining_length", fuzzable=True)
+s_size(
+    "subscribe_body", length=1, math=lambda x: x, name="remaining_length", fuzzable=True
+)
 
 if s_block_start("subscribe_body"):
     # Variable Header - Packet ID
     s_word(0x0001, name="packet_id", endian=">", fuzzable=True)
 
     # Payload - Topic filter
-    s_word(0x000a, name="topic_len", endian=">", fuzzable=True)
+    s_word(0x000A, name="topic_len", endian=">", fuzzable=True)
     s_string("test/topic", name="topic_filter", fuzzable=True)
     s_byte(0x00, name="qos", fuzzable=True)  # Requested QoS
 
@@ -79,11 +81,13 @@ s_initialize("mqtt_publish")
 
 # Fixed Header
 s_byte(0x30, name="packet_type", fuzzable=True)  # PUBLISH, QoS 0
-s_size("publish_body", length=1, math=lambda x: x, name="remaining_length", fuzzable=True)
+s_size(
+    "publish_body", length=1, math=lambda x: x, name="remaining_length", fuzzable=True
+)
 
 if s_block_start("publish_body"):
     # Variable Header - Topic Name
-    s_word(0x000a, name="topic_len", endian=">", fuzzable=True)
+    s_word(0x000A, name="topic_len", endian=">", fuzzable=True)
     s_string("test/topic", name="topic", fuzzable=True)
 
     # Payload - Message
@@ -95,14 +99,14 @@ s_block_end()
 # MQTT PINGREQ Packet
 # ============================================================================
 s_initialize("mqtt_pingreq")
-s_byte(0xc0, name="packet_type", fuzzable=False)
+s_byte(0xC0, name="packet_type", fuzzable=False)
 s_byte(0x00, name="remaining_length", fuzzable=True)
 
 # ============================================================================
 # MQTT DISCONNECT Packet
 # ============================================================================
 s_initialize("mqtt_disconnect")
-s_byte(0xe0, name="packet_type", fuzzable=False)
+s_byte(0xE0, name="packet_type", fuzzable=False)
 s_byte(0x00, name="remaining_length", fuzzable=True)
 
 # ============================================================================
