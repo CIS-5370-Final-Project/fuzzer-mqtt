@@ -13,6 +13,26 @@ services:
     networks:
       - mqtt-network
 
+  publisher:
+    build: .
+    container_name: mqtt-publisher
+    command: python -u publisher.py
+    depends_on:
+      - mosquitto
+    restart: unless-stopped
+    networks:
+      - mqtt-network
+
+  subscriber:
+    build: .
+    container_name: mqtt-subscriber
+    command: python -u subscriber.py
+    depends_on:
+      - mosquitto
+    restart: unless-stopped
+    networks:
+      - mqtt-network
+
 networks:
   mqtt-network:
     driver: bridge
